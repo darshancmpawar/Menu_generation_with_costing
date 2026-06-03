@@ -171,6 +171,7 @@ _client_loader = None
 _pools = None
 _df = None
 _menu_rules = None
+_cost_lookup = None
 
 
 def _get_client_loader():
@@ -203,6 +204,17 @@ def _get_menu_rules():
                 loader = MenuRuleLoader(MENU_RULES_CONFIG_PATH)
                 _menu_rules = loader.load_from_file()
     return _menu_rules
+
+
+def _get_cost_lookup():
+    global _cost_lookup
+    if _cost_lookup is None:
+        with _init_lock:
+            if _cost_lookup is None:
+                from src.cost.calculator import build_cost_lookup
+                df, _ = _get_menu_data()
+                _cost_lookup = build_cost_lookup(df)
+    return _cost_lookup
 
 
 def _rules_and_skip_for_client(client_name, dates):
@@ -618,10 +630,12 @@ def plan_menu():
         formatter = SolutionFormatter(
             week_plan, plan_dates, theme_map=inputs.client_cfg.theme_map or None,
         )
+        from src.cost.calculator import enrich_solution_with_costs
+        solution = enrich_solution_with_costs(formatter.to_dict(), _get_cost_lookup())
         response = {
             'success': True,
             'message': f'Menu plan generated for {inputs.client_name}',
-            'solution': formatter.to_dict(),
+            'solution': solution,
             'rule_diagnostics': diag_dicts,
             'summary': summary,
         }
@@ -697,10 +711,12 @@ def regenerate_cells():
         formatter = SolutionFormatter(
             week_plan, plan_dates, theme_map=inputs.client_cfg.theme_map or None,
         )
+        from src.cost.calculator import enrich_solution_with_costs
+        solution = enrich_solution_with_costs(formatter.to_dict(), _get_cost_lookup())
         response = {
             'success': True,
             'message': f'Regenerated {sum(len(v) for v in replace_mask.values())} cells for {inputs.client_name}',
-            'solution': formatter.to_dict(),
+            'solution': solution,
         }
         if regen.rule_failures:
             response['rule_warnings'] = regen.rule_failures
@@ -900,6 +916,8 @@ def saved_plan():
             enriched, weekday_dates,
             theme_map=client_cfg.theme_map or None,
         )
+        from src.cost.calculator import enrich_solution_with_costs
+        solution = enrich_solution_with_costs(formatter.to_dict(), _get_cost_lookup())
         covered = sorted(d.isoformat() for d in enriched.keys())
         exists = len(enriched) == len(weekday_dates) and len(enriched) > 0
 
@@ -908,7 +926,7 @@ def saved_plan():
             'exists': exists,
             'covered_dates': covered,
             'source': 'history',
-            'solution': formatter.to_dict(),
+            'solution': solution,
         })
     except ValueError as e:
         return jsonify({'success': False, 'error': str(e)}), 400
