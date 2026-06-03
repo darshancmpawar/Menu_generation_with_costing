@@ -79,10 +79,15 @@ def format_item_for_ui(item_str: str) -> str:
 
 
 def format_item_html(item_str: str) -> str:
-    """Format item string as HTML with colored pill for the color tag.
+    """Format item string as HTML with a small colored dot + label for the
+    color tag.
 
     Input:  'veg_fried_rice(Y)'
-    Output: 'Veg Fried Rice <span class="color-pill" ...>(Yellow)</span>'
+    Output: 'Veg Fried Rice <span class="color-pill">…dot… Yellow</span>'
+
+    The color is shown as a compact dot + muted label rather than a solid
+    colored block — far less visual noise across a full week's grid while
+    still surfacing the item's color.
     """
     if not item_str:
         return '<span class="cell-empty">&mdash;</span>'
@@ -95,10 +100,12 @@ def format_item_html(item_str: str) -> str:
 
     if m:
         initial = m.group(1)
-        color_name, bg, fg = _COLOR_MAP.get(initial, (initial, '#1f1f23', '#a1a1aa'))
+        # fg is the vivid variant of the color — used for the dot.
+        color_name, _bg, fg = _COLOR_MAP.get(initial, (initial, '#1f1f23', '#a1a1aa'))
         return (
             f'<span class="item-name">{name}</span>'
-            f'<span class="color-pill" style="background:{bg};color:{fg};">'
+            f'<span class="color-pill">'
+            f'<span class="color-dot" style="background:{fg};"></span>'
             f'{html.escape(color_name)}</span>'
         )
     return f'<span class="item-name">{name}</span>'
