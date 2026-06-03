@@ -29,9 +29,10 @@ import streamlit as st
 from ui.api_client import MenuApiClient, RuleDiagnosticsBlockedError
 from ui.formatters import (
     display_label_for_slot_id,
+    extract_cost_data,
     flatten_api_solution,
     format_item_for_ui,
-    format_item_html,
+    format_item_html_with_cost,
     slot_sort_key,
     THEME_TAG_COLORS,
     THEME_ICONS,
@@ -196,6 +197,9 @@ _SESSION_DEFAULTS = {
     # above the plan table.
     "rule_diagnostics": [],
     "diagnostics_summary": None,
+    # Per-item and per-day cost data extracted from the enriched API
+    # solution. Empty dict when the Excel has no cost columns.
+    "cost_data": {},
 }
 for key, default in _SESSION_DEFAULTS.items():
     if key not in st.session_state:
@@ -411,9 +415,8 @@ if generate_clicked:
 
         if saved.get("exists"):
             with st.spinner(f"Loading saved plan for {selected_client}..."):
-                flat_plan, day_types = flatten_api_solution(
-                    saved.get("solution", {}),
-                )
+                _raw_solution = saved.get("solution", {})
+                flat_plan, day_types = flatten_api_solution(_raw_solution)
                 st.session_state.plan = flat_plan
                 st.session_state.plan_dates = sorted(flat_plan.keys())
                 st.session_state.day_types = day_types
@@ -423,6 +426,7 @@ if generate_clicked:
                 st.session_state.plan_source = "history"
                 st.session_state.rule_diagnostics = []
                 st.session_state.diagnostics_summary = None
+                st.session_state.cost_data = extract_cost_data(_raw_solution)
                 st.rerun()
         else:
             with st.spinner(f"Generating plan for {selected_client}..."):
@@ -433,7 +437,8 @@ if generate_clicked:
                         num_days=num_days,
                         time_limit_seconds=_planning_time_limit(num_days),
                     )
-                    flat_plan, day_types = flatten_api_solution(result.get("solution", {}))
+                    _raw_solution = result.get("solution", {})
+                    flat_plan, day_types = flatten_api_solution(_raw_solution)
                     st.session_state.plan = flat_plan
                     st.session_state.plan_dates = sorted(flat_plan.keys())
                     st.session_state.day_types = day_types
@@ -450,6 +455,7 @@ if generate_clicked:
                     st.session_state.diagnostics_summary = (
                         result.get("summary")
                     )
+                    st.session_state.cost_data = extract_cost_data(_raw_solution)
                     st.rerun()
                 except RuleDiagnosticsBlockedError as e:
                     # Pre-flight gate fired. Stash the structured
@@ -464,6 +470,7 @@ if generate_clicked:
                     st.session_state.plan_source = "preflight_blocked"
                     st.session_state.rule_diagnostics = e.diagnostics or []
                     st.session_state.diagnostics_summary = e.summary or None
+                    st.session_state.cost_data = {}
                     st.rerun()
                 except (ConnectionError, OSError, ValueError, RuntimeError) as e:
                     st.error(f"Generation failed: {e}")
@@ -556,18 +563,39 @@ if plan and plan_dates:
                 f'{icon} {label}</span></th>')
         header_html += '</tr>'
 
+        _cost_data = st.session_state.get("cost_data", {})
         body_html = ''
         for slot_id in sorted_slots:
             body_html += f'<tr><td>{display_label_for_slot_id(slot_id)}</td>'
             for d_str in plan_dates:
                 raw_item = plan.get(d_str, {}).get(slot_id, "")
-                body_html += f'<td>{format_item_html(raw_item)}</td>'
+                _item_cost = _cost_data.get(d_str, {}).get("items", {}).get(slot_id, {})
+                body_html += (
+                    f'<td>{format_item_html_with_cost(raw_item, _item_cost.get("cost_per_person_display"), _item_cost.get("grammage_display"))}</td>'
+                )
             body_html += '</tr>'
+
+        # Cost & qty footer rows (only when cost data is present)
+        footer_html = ''
+        if _cost_data:
+            footer_html += '<tr class="cost-footer-row">'
+            footer_html += '<td class="cost-footer-label">&#x1F37D; Food Cost / Person</td>'
+            for d_str in plan_dates:
+                val = html.escape(_cost_data.get(d_str, {}).get("day_cost_display") or "—")
+                footer_html += f'<td class="cost-footer-value cost-value">{val}</td>'
+            footer_html += '</tr>'
+
+            footer_html += '<tr class="cost-footer-row">'
+            footer_html += '<td class="cost-footer-label">&#x2696; Qty / Plate</td>'
+            for d_str in plan_dates:
+                val = html.escape(_cost_data.get(d_str, {}).get("day_qty_display") or "—")
+                footer_html += f'<td class="cost-footer-value qty-value">{val}</td>'
+            footer_html += '</tr>'
 
         st.markdown(
             f'<div class="menu-table-wrap"><table class="menu-table">'
             f'<thead>{header_html}</thead>'
-            f'<tbody>{body_html}</tbody></table></div>',
+            f'<tbody>{body_html}{footer_html}</tbody></table></div>',
             unsafe_allow_html=True)
     except Exception as _exc:
         logger.exception("Failed to render menu table")
@@ -628,6 +656,7 @@ if plan and plan_dates:
             st.session_state.plan_source = None
             st.session_state.rule_diagnostics = []
             st.session_state.diagnostics_summary = None
+            st.session_state.cost_data = {}
             st.rerun()
 
     # Regeneration
@@ -689,7 +718,9 @@ if plan and plan_dates:
                             start_date=plan_dates[0],
                             num_days=len(plan_dates),
                             time_limit_seconds=_planning_time_limit(len(plan_dates)))
-                        flat_regen, regen_day_types = flatten_api_solution(result.get("solution", {}))
+                        _raw_regen = result.get("solution", {})
+                        flat_regen, regen_day_types = flatten_api_solution(_raw_regen)
+                        st.session_state.cost_data = extract_cost_data(_raw_regen)
                         st.session_state.plan = flat_regen if flat_regen else plan
                         if regen_day_types:
                             st.session_state.day_types = regen_day_types

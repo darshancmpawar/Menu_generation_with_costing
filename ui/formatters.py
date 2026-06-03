@@ -104,6 +104,28 @@ def format_item_html(item_str: str) -> str:
     return f'<span class="item-name">{name}</span>'
 
 
+def format_item_html_with_cost(
+    item_str: str,
+    cost_display: Optional[str] = None,
+    grammage_display: Optional[str] = None,
+) -> str:
+    """Like format_item_html but adds qty and cost pills on a second line.
+
+    Layout per cell:
+        Item Name  [Color]
+        [60 g]  [₹12.50]
+    """
+    base = format_item_html(item_str)
+    if not item_str or (cost_display is None and grammage_display is None):
+        return base
+    pills = ""
+    if grammage_display:
+        pills += f'<span class="qty-pill">{html.escape(grammage_display)}</span>'
+    if cost_display:
+        pills += f'<span class="cost-pill">{html.escape(cost_display)}</span>'
+    return base + f'<div class="item-cost-row">{pills}</div>'
+
+
 def pretty_text(item_str: str) -> str:
     if not item_str:
         return ""
@@ -150,3 +172,40 @@ def slot_sort_key(slot_id: str) -> int:
         return BASE_SLOT_NAMES.index(base)
     except ValueError:
         return 999
+
+
+def extract_cost_data(raw_solution: Dict[str, Any]) -> Dict[str, Any]:
+    """Pull cost fields out of the enriched API solution.
+
+    Returns {date_str: {items: {slot_id: {cost_per_person_display, grammage_display}},
+                        day_cost_display, day_qty_display}}.
+
+    Returns an empty dict when no cost data is present (e.g. Excel has no
+    cost_per_kg / grammage_per_serving columns) so callers can skip the
+    cost footer rows with a simple truthiness check.
+    """
+    cost_data: Dict[str, Any] = {}
+    has_any_cost = False
+
+    for day_key, day_data in raw_solution.items():
+        if not isinstance(day_data, dict):
+            continue
+        items_cost: Dict[str, Any] = {}
+        for slot_id, item_info in day_data.get("items", {}).items():
+            if not isinstance(item_info, dict):
+                continue
+            cpp = item_info.get("cost_per_person_display")
+            gd = item_info.get("grammage_display")
+            items_cost[slot_id] = {
+                "cost_per_person_display": cpp,
+                "grammage_display": gd,
+            }
+            if cpp is not None:
+                has_any_cost = True
+        cost_data[day_key] = {
+            "items": items_cost,
+            "day_cost_display": day_data.get("day_cost_display", ""),
+            "day_qty_display": day_data.get("day_qty_display", ""),
+        }
+
+    return cost_data if has_any_cost else {}
