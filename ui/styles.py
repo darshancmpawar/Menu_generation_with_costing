@@ -228,62 +228,81 @@ STYLES = """
         text-transform: uppercase; letter-spacing: 0.04em; line-height: 1.6;
     }
     .menu-table tbody td {
-        padding: 0.55rem 0.85rem;
+        padding: 0.7rem 0.9rem;
         border-bottom: 1px solid rgba(39,39,42,0.6);
         border-right: 1px solid rgba(39,39,42,0.6);
         color: var(--text-secondary); background: var(--bg-secondary);
-        vertical-align: middle; transition: background 0.15s ease;
+        vertical-align: top; transition: background 0.15s ease;
     }
     .menu-table tbody td:first-child {
-        font-weight: 600; color: var(--text-tertiary); background: var(--bg-tertiary);
-        font-size: 0.76rem; white-space: nowrap; min-width: 120px;
+        font-weight: 600; color: var(--text-secondary); background: var(--bg-tertiary);
+        font-size: 0.74rem; white-space: nowrap; min-width: 120px;
+        text-transform: uppercase; letter-spacing: 0.03em; vertical-align: middle;
         border-right: 1px solid var(--border-subtle);
     }
     .menu-table tbody td:last-child { border-right: none; }
     .menu-table tbody tr:last-child td { border-bottom: none; }
     .menu-table tbody tr:hover td { background: var(--bg-hover); }
     .menu-table tbody tr:hover td:first-child { background: var(--bg-elevated); }
-    .item-name { color: var(--text-primary); font-weight: 500; font-size: 0.8rem; }
-    .color-pill {
-        display: inline-block; margin-left: 5px; padding: 1px 6px;
-        border-radius: 99px; font-size: 0.6rem; font-weight: 600;
-    }
-    .cell-empty { color: var(--text-muted); font-size: 0.8rem; }
 
-    /* Cost & quantity pills shown below each item */
+    /* Item name + color tag (first line of a cell) */
+    .item-name {
+        color: var(--text-primary); font-weight: 600; font-size: 0.84rem;
+        line-height: 1.3;
+    }
+    .color-pill {
+        display: inline-flex; align-items: center; gap: 4px;
+        margin-left: 6px; font-size: 0.62rem; font-weight: 600;
+        color: var(--text-tertiary); letter-spacing: 0.02em;
+        vertical-align: middle; white-space: nowrap;
+    }
+    .color-dot {
+        width: 8px; height: 8px; border-radius: 50%;
+        display: inline-block; flex-shrink: 0;
+        box-shadow: 0 0 0 2px rgba(255,255,255,0.04);
+    }
+    .cell-empty { color: var(--text-muted); font-size: 0.84rem; }
+
+    /* Cost & quantity pills (second line of a cell) — grams in neutral
+       slate, price in green so the two read as clearly distinct. */
     .item-cost-row {
-        display: flex; align-items: center; gap: 4px; margin-top: 4px;
+        display: flex; align-items: center; gap: 6px; margin-top: 6px;
     }
     .qty-pill {
-        display: inline-block; padding: 1px 7px; border-radius: 99px;
-        font-size: 0.58rem; font-weight: 700; letter-spacing: 0.02em;
-        background: #0f1a2e; color: #93c5fd;
+        display: inline-flex; align-items: center;
+        padding: 2px 8px; border-radius: 6px;
+        font-size: 0.62rem; font-weight: 600; letter-spacing: 0.01em;
+        background: rgba(148,163,184,0.12); color: #cbd5e1;
     }
     .cost-pill {
-        display: inline-block; padding: 1px 7px; border-radius: 99px;
-        font-size: 0.58rem; font-weight: 700; letter-spacing: 0.02em;
-        background: #0f2a1d; color: #86efac;
+        display: inline-flex; align-items: center;
+        padding: 2px 8px; border-radius: 6px;
+        font-size: 0.66rem; font-weight: 700; letter-spacing: 0.01em;
+        background: rgba(52,211,153,0.14); color: #6ee7b7;
     }
 
     /* Plate cost / qty footer rows */
     .menu-table tbody .cost-footer-row td {
         background: var(--bg-elevated) !important;
+        vertical-align: middle !important;
+        padding: 0.75rem 0.9rem !important;
+    }
+    .menu-table tbody .cost-footer-row.cost-footer-first td {
         border-top: 2px solid var(--border-default) !important;
-        padding: 0.6rem 0.85rem !important;
     }
     .menu-table tbody .cost-footer-row:hover td {
         background: var(--bg-elevated) !important;
     }
     .cost-footer-label {
-        font-size: 0.7rem !important; font-weight: 700 !important;
+        font-size: 0.68rem !important; font-weight: 700 !important;
         color: var(--text-secondary) !important;
         text-transform: uppercase; letter-spacing: 0.05em; white-space: nowrap;
     }
     .cost-footer-value {
-        text-align: center; font-weight: 700 !important; font-size: 0.82rem !important;
+        text-align: center; font-weight: 800 !important; font-size: 0.9rem !important;
     }
-    .cost-footer-row .cost-value { color: #86efac !important; }
-    .cost-footer-row .qty-value  { color: #93c5fd !important; }
+    .cost-footer-row .cost-value { color: #6ee7b7 !important; }
+    .cost-footer-row .qty-value  { color: #cbd5e1 !important; }
 
     /* Pool warnings */
     .pool-warn-bar {

@@ -578,7 +578,7 @@ if plan and plan_dates:
         # Cost & qty footer rows (only when cost data is present)
         footer_html = ''
         if _cost_data:
-            footer_html += '<tr class="cost-footer-row">'
+            footer_html += '<tr class="cost-footer-row cost-footer-first">'
             footer_html += '<td class="cost-footer-label">&#x1F37D; Food Cost / Person</td>'
             for d_str in plan_dates:
                 val = html.escape(_cost_data.get(d_str, {}).get("day_cost_display") or "—")
