@@ -251,20 +251,14 @@ STYLES = """
         line-height: 1.3;
     }
     .color-pill {
-        display: inline-flex; align-items: center; gap: 4px;
-        margin-left: 6px; font-size: 0.62rem; font-weight: 600;
-        color: var(--text-tertiary); letter-spacing: 0.02em;
-        vertical-align: middle; white-space: nowrap;
-    }
-    .color-dot {
-        width: 8px; height: 8px; border-radius: 50%;
-        display: inline-block; flex-shrink: 0;
-        box-shadow: 0 0 0 2px rgba(255,255,255,0.04);
+        display: inline-block; margin-left: 5px; padding: 1px 7px;
+        border-radius: 99px; font-size: 0.6rem; font-weight: 600;
     }
     .cell-empty { color: var(--text-muted); font-size: 0.84rem; }
 
-    /* Cost & quantity pills (second line of a cell) — grams in neutral
-       slate, price in green so the two read as clearly distinct. */
+    /* Cost & quantity pills (second line of a cell).
+       Grams: neutral slate — reads as secondary / reference info.
+       Price: violet — no item color uses purple, clearly distinct. */
     .item-cost-row {
         display: flex; align-items: center; gap: 6px; margin-top: 6px;
     }
@@ -278,7 +272,7 @@ STYLES = """
         display: inline-flex; align-items: center;
         padding: 2px 8px; border-radius: 6px;
         font-size: 0.66rem; font-weight: 700; letter-spacing: 0.01em;
-        background: rgba(52,211,153,0.14); color: #6ee7b7;
+        background: rgba(139,92,246,0.18); color: #c4b5fd;
     }
 
     /* Plate cost / qty footer rows */
